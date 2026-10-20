@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Wedding Nazotoki</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Noto+Serif+JP&display=swap" rel="stylesheet">
+
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+        transition: background-color 0.5s ease;
+        font-family: 'Noto Serif JP', serif;
+        text-align: center;
+        -webkit-tap-highlight-color: transparent;
+        overflow-x: hidden;
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      }
+
+      h1 {
+        font-family: 'Playfair Display', serif;
+        margin-top: 20px;
+      }
+
+      p {
+        margin: 10px auto 20px;
+        line-height: 1.8;
+        text-align: left;
+        width: fit-content;
+        max-width: 90%;
+        padding-bottom: 120px;
+        font-size: 80%;
+      }
+
+      #box {
+        width: 330px;
+        height: 330px;
+        background-color: transparent;
+        position: relative;
+        margin: 0px auto;
+        padding:20px 0;
+        touch-action: pan-y;
+      }
+
+      #box img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .black {
+        background-color: #001625;
+        color: #fff;
+      }
+
+      .white {
+        background-color: #fff;
+      }
+
+      .canvas-wave {
+        left: 0;
+        z-index: 1000;
+        min-width: 320px;
+        pointer-events: none;
+        position: fixed;
+        transition: all 0.55s ease;
+        width: 100vw;
+      }
+
+      .is-page-bar .canvas-bg {
+        background-color: #fff;
+      }
+
+      .canvas-bg {
+        background-color: #1d0e04;
+        height: 100vh;
+        min-width: 320px;
+        position: absolute;
+        top: 298px;
+        width: inherit;
+      }
+
+      /* フェードイン用 */
+      #title, #box, #message {
+        opacity: 0;
+        transition: opacity 1s ease;
+      }
+
+      #title.fade-in,
+      #box.fade-in,
+      #message.fade-in {
+        opacity: 1;
+      }
+    </style>
+  </head>
+
+  <body class="white">
+
+    <h1 id="title">Welcome to Our Wedding</h1>
+
+    <div
+      class="canvas-wave"
+      id="canvas-container"
+      style="opacity: 0; bottom: 0px"
+    >
+      <div class="canvas-bg"></div>
+      <canvas
+        id="sineCanvas"
+        width="600px"
+        height="300px"
+      ></canvas>
+    </div>
+
+    <div id="box">
+      <img id="image1" src="1.png" alt="" width="330px" height="330px">
+      <img id="image2" src="2.png" alt="" width="330px" height="330px" style="display:none;">
+    </div>
+
+    <p id="message">
+      |<br>
+      ともに紡いできたご縁に日々支えられ<br>
+      結婚式の日を迎えることができました<br>
+      いつも温かく見守ってくださり<br>
+      まことにありがとうございます<br>
+      わたしたちはまだ未熟ではありますが<br>
+      立派な家庭を築けるよう努めてまいります<br>
+      二人で感謝を重ねながら<br>
+      なにげない日々も大切に過ごしていきます<br>
+      存分に楽しんでいただけたら幸いです<br>
+      れな・ゆうと<br>
+      |
+      <br>
+    </p>
+
+    <script>
+      const range = 90;
+      const radius = 150;
+      const innerRadius = 90;
+      const bodyEl = document.body;
+      const boxEl = document.getElementById("box");
+      const canvas = document.getElementById("sineCanvas");
+      const canvasWaveEl = document.getElementById("canvas-container");
+      let points = [];
+      let pointCounter = 0;
+
+      const titleEl = document.getElementById("title");
+      const messageEl = document.getElementById("message");
+      document.getElementById("image2").style.display = "none";
+
+      function initStyle() {
+        points = [];
+        pointCounter = 0;
+        canvasWaveEl.style.bottom = 0;
+        canvasWaveEl.style.opacity = 0;
+
+        boxEl.removeEventListener("mousemove", onMouseMove);
+        boxEl.removeEventListener("mouseup", onMouseUp);
+        boxEl.removeEventListener("touchmove", onMouseMove);
+        boxEl.removeEventListener("mouseup", onMouseUp);
+      }
+
+      function onMouseDown(e) {
+        e.preventDefault();
+        const boxRect = boxEl.getBoundingClientRect();
+        const boxCenterX = boxRect.left + boxRect.width / 2;
+        const boxCenterY = boxRect.top + boxRect.height / 2;
+        const mouseX = e.clientX ? e.clientX : e.touches[0].clientX;
+        const mouseY = e.clientY ? e.clientY : e.touches[0].clientY;
+
+        const distanceToCenter = Math.sqrt(
+          Math.pow(mouseX - boxCenterX, 2) + Math.pow(mouseY - boxCenterY, 2)
+        );
+
+        if (
+          distanceToCenter >= innerRadius &&
+          distanceToCenter <= innerRadius + range
+        ) {
+          const angle = Math.atan2(mouseY - boxCenterY, mouseX - boxCenterX);
+
+          for (let i = 0; i < 9; i++) {
+            const pointAngle = angle + (i * (2 * Math.PI)) / 9;
+            const pointX = boxCenterX + Math.cos(pointAngle) * radius;
+            const pointY = boxCenterY + Math.sin(pointAngle) * radius;
+
+            points.push({
+              left: pointX - range / 2,
+              top: pointY - range / 2,
+              right: pointX + range / 2,
+              bottom: pointY + range / 2,
+              passed: false,
+            });
+          }
+
+          boxEl.addEventListener("mousemove", onMouseMove);
+          boxEl.addEventListener("mouseup", onMouseUp);
+          boxEl.addEventListener("touchmove", onMouseMove);
+          boxEl.addEventListener("touchend", onMouseUp);
+        }
+      }
+
+      function onMouseMove(e) {
+        e.preventDefault();
+
+        const boxRect = boxEl.getBoundingClientRect();
+        const boxCenterX = boxRect.left + boxRect.width / 2;
+        const boxCenterY = boxRect.top + boxRect.height / 2;
+        let currentPoint = points[pointCounter];
+        const mouseX = e.clientX ? e.clientX : e.touches[0].clientX;
+        const mouseY = e.clientY ? e.clientY : e.touches[0].clientY;
+
+        if (
+          points[points.length - 1].passed &&
+          mouseX >= points[0].left &&
+          mouseX <= points[0].right &&
+          mouseY >= points[0].top &&
+          mouseY <= points[0].bottom
+        ) {
+          if (bodyEl.classList.contains("white")) {
+            titleEl.innerHTML = "Thank You for coming";
+            messageEl.innerHTML = `
+              結婚式の裏側へようこそ<br>
+              <br>
+              この画面を見せながら<br>
+              新郎新婦と  ①②③④  すると…<br>
+              <br>
+              ヒント<br>
+              🥫→①②③②<br>
+              🥐→③②<br>
+              🥧→③④<br>
+              <br>
+            `;
+          } else {
+            titleEl.innerHTML = "Welcome to Our Wedding";
+            messageEl.innerHTML = `
+              |<br>
+              ともに紡いできたご縁に日々支えられ<br>
+              結婚式の日を迎えることができました<br>
+              いつも温かく見守ってくださり<br>
+              まことにありがとうございます<br>
+              わたしたちはまだ未熟ではありますが<br>
+              立派な家庭を築けるよう努めてまいります<br>
+              二人で感謝を重ねながら<br>
+              なにげない日々も大切に過ごしていきます<br>
+              存分に楽しんでいただけたら幸いです<br>
+              れな・ゆうと<br>
+              |
+            `;
+          }
+
+          canvasWaveEl.style.bottom == 0;
+          canvasWaveEl.style.opacity == 0;
+          if (bodyEl.classList.contains("white")) {
+            bodyEl.classList.add("black");
+            bodyEl.classList.remove("white");
+            canvasWaveEl.classList.add("is-page-bar");
+            document.getElementById("image1").style.display = "none";
+            document.getElementById("image2").style.display = "block";
+          } else {
+            bodyEl.classList.add("white");
+            bodyEl.classList.remove("black");
+            canvasWaveEl.classList.remove("is-page-bar");
+            document.getElementById("image2").style.display = "none";
+            document.getElementById("image1").style.display = "block";
+          }
+          initStyle();
+        }
+
+        const distanceToCenter = Math.sqrt(
+          Math.pow(mouseX - boxCenterX, 2) + Math.pow(mouseY - boxCenterY, 2)
+        );
+
+        if (
+          distanceToCenter < innerRadius ||
+          distanceToCenter > innerRadius + range
+        ) {
+          initStyle();
+        }
+
+        if (
+          mouseX >= currentPoint.left &&
+          mouseX <= currentPoint.right &&
+          mouseY >= currentPoint.top &&
+          mouseY <= currentPoint.bottom
+        ) {
+          currentPoint.passed = true;
+          canvasWaveEl.style.bottom = pointCounter * 10 + "vh";
+          canvasWaveEl.style.opacity = pointCounter * 0.1;
+          pointCounter == 8 ? (pointCounter = 0) : pointCounter++;
+        }
+      }
+
+      function onMouseUp(e) {
+        initStyle();
+        boxEl.removeEventListener("mousemove", onMouseMove);
+        boxEl.removeEventListener("mouseup", onMouseUp);
+        boxEl.removeEventListener("touchmove", onMouseMove);
+        boxEl.removeEventListener("touchend", onMouseUp);
+      }
+
+      initStyle();
+      boxEl.addEventListener("mousedown", onMouseDown);
+      boxEl.addEventListener("touchstart", onMouseDown);
+
+      const ctx = canvas.getContext("2d");
+      let animationFactor = 0;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        animationFactor += 0.8;
+        animationFactor >= 30000
+          ? (animationFactor = 0)
+          : (animationFactor += 1);
+
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        for (let x = 0; x < canvas.width; x++) {
+          const y =
+            30 * Math.sin(((0.5 * x + animationFactor) * Math.PI) / 180) +
+            canvas.height / 2;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.closePath();
+
+        canvasWaveEl.classList.contains("is-page-bar")
+          ? (ctx.fillStyle = "#fff")
+          : (ctx.fillStyle = "#1d0e04");
+
+        ctx.fill();
+
+        let world = () => {
+          resize();
+          draw();
+        };
+
+        setTimeout(world, 1000 / 60);
+      }
+
+      draw();
+
+      // ★ フェードイン演出
+      window.addEventListener("load", () => {
+        setTimeout(() => { titleEl.classList.add("fade-in"); }, 200);
+        setTimeout(() => { boxEl.classList.add("fade-in"); }, 600);
+        setTimeout(() => { messageEl.classList.add("fade-in"); }, 1000);
+      });
+    </script>
+  </body>
+</html>
